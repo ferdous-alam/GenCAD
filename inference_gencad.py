@@ -128,6 +128,14 @@ def vec_to_CAD(cad_vec):
         print('cannot create CAD')
 
 
+def resolve_input_images(image_path):
+    if os.path.isdir(image_path):
+        return glob.glob(os.path.join(image_path, "*.png"))
+    if os.path.isfile(image_path):
+        return [image_path]
+    raise FileNotFoundError(f"Input path does not exist: {image_path}")
+
+
 def main(img_dir, export_stl=False, export_img=False):
     """
     
@@ -151,10 +159,11 @@ def main(img_dir, export_stl=False, export_img=False):
 
     # device
 
-    device_num = 0
-    device = torch.device(f"cuda:{device_num}")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     phase = "test"
     batch_size = 64
+
+    print(f'# # Running inference on {device}')
 
     ########################################
     ########################################
@@ -211,7 +220,7 @@ def main(img_dir, export_stl=False, export_img=False):
 
     cad_decoder = VanillaCADTransformer(config).to(config.device) 
 
-    cad_ckpt = torch.load(cad_ckpt_path)
+    cad_ckpt = torch.load(cad_ckpt_path, map_location="cpu")
     cad_decoder.load_state_dict(cad_ckpt['model_state_dict'])
     cad_decoder.eval()
 
@@ -219,7 +228,10 @@ def main(img_dir, export_stl=False, export_img=False):
 
     ################# generate images #############
 
-    image_files = glob.glob(f"{img_dir}/*.png")
+    image_files = resolve_input_images(img_dir)
+
+    if not image_files:
+        raise FileNotFoundError(f"No PNG images found for input: {img_dir}")
 
     for img_path in tqdm(image_files):
         img = process_image(img_path).to(device)
@@ -253,19 +265,21 @@ def main(img_dir, export_stl=False, export_img=False):
             shape = vec_to_CAD(cad_vec=cad_vec)
 
             if export_img: 
-                img_name = img_path.split('.')[0].split('/')[-1]
-                os.makedirs(os.path.join(img_dir, "generated_images"), exist_ok=True) 
-                img_export_path = img_dir + "/generated_images/" + f"{img_name}.png"
+                input_root = img_dir if os.path.isdir(img_dir) else os.path.dirname(img_path)
+                img_name = os.path.splitext(os.path.basename(img_path))[0]
+                os.makedirs(os.path.join(input_root, "generated_images"), exist_ok=True) 
+                img_export_path = os.path.join(input_root, "generated_images", f"{img_name}.png")
                 save_view(shape, view_type='iso', save_path=img_export_path)
 
 
             if export_stl:
-                img_name = img_path.split('.')[0].split('/')[-1]
-                os.makedirs(os.path.join(img_dir, "stls"), exist_ok=True) 
-                export_path = img_dir + "/stls/" + f"{img_name}.stl"
+                input_root = img_dir if os.path.isdir(img_dir) else os.path.dirname(img_path)
+                img_name = os.path.splitext(os.path.basename(img_path))[0]
+                os.makedirs(os.path.join(input_root, "stls"), exist_ok=True) 
+                export_path = os.path.join(input_root, "stls", f"{img_name}.stl")
                 write_stl_file(shape, export_path, mode="binary", linear_deflection=0.5, angular_deflection=0.3,)
-        except:
-            print("cannot find EOS") 
+        except Exception as exc:
+            print(f"inference failed for {img_path}: {exc}") 
 
 
 if __name__ == "__main__":
