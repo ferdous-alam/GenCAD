@@ -11,3 +11,4 @@ einops
 h5py
 plyfile
 trimesh
+matplotlib

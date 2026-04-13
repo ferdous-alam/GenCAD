@@ -109,7 +109,7 @@ def logits2vec(outputs, refill_pad=True, to_numpy=True, device=None):
         if device is None:
             mask = ~torch.tensor(CMD_ARGS_MASK).bool().cpu()[out_command.long()]
         else: 
-            mask = ~torch.tensor(CMD_ARGS_MASK).bool().cuda(device=device)[out_command.long()]
+            mask = ~torch.tensor(CMD_ARGS_MASK).bool().to(device)[out_command.long()]
 
         out_args[mask] = -1
 
