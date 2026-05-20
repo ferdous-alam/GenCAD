@@ -31,7 +31,7 @@ Download from [here](https://drive.google.com/drive/folders/1M0dPr5kILGY9HTRCHox
 
 ## 📦 Pretrained Models
 
-Download from [here](https://drive.google.com/drive/folders/1Ej7wdtlqT5P-SoUf3gsZXD8b78XqhiI5?usp=sharing) and place them in `data/ckpt/`.
+Download from [here](https://drive.google.com/drive/folders/1Ej7wdtlqT5P-SoUf3gsZXD8b78XqhiI5?usp=sharing) and place them in `model/ckpt/`.
 
 ---
 
